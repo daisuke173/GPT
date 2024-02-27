@@ -1,2 +1,2 @@
 # GPT
-code generated with chatGPT
+code generated with chatGPT, for my learning
