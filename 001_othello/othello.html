@@ -1,1 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Othello Game</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
 
+        #board {
+            display: grid;
+            grid-template-columns: repeat(8, 50px);
+            gap: 1px;
+            border: 1px solid #000;
+            background-color: #008000;
+        }
+
+        .cell {
+            width: 50px;
+            height: 50px;
+            border: 1px solid #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .white { color: white; }
+        .black { color: black; }
+
+        #score {
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="score">
+    <p>Your Score: <span id="playerScore">2</span></p>
+    <p>Opponent Score: <span id="opponentScore">2</span></p>
+</div>
+
+<div id="board"></div>
+
+<script>
+    // Initialize game variables
+    let playerScore = 2;
+    let opponentScore = 2;
+    let currentPlayer = 'black';
+    let board = [
+        ['', '', '', '', '', '', '', ''],
+        ['', '', '', '', '', '', '', ''],
+        ['', '', '', '', '', '', '', ''],
+        ['', '', '', 'white', 'black', '', '', ''],
+        ['', '', '', 'black', 'white', '', '', ''],
+        ['', '', '', '', '', '', '', ''],
+        ['', '', '', '', '', '', '', ''],
+        ['', '', '', '', '', '', '', '']
+    ];
+
+    // Create the game board
+    const boardElement = document.getElementById('board');
+    for (let i = 0; i < 8; i++) {
+        for (let j = 0; j < 8; j++) {
+            const cell = document.createElement('div');
+            cell.classList.add('cell');
+            cell.dataset.row = i;
+            cell.dataset.col = j;
+            cell.addEventListener('click', handleClick);
+            boardElement.appendChild(cell);
+            if (board[i][j] === 'white') {
+                cell.classList.add('white');
+                cell.innerText = '●';
+            } else if (board[i][j] === 'black') {
+                cell.classList.add('black');
+                cell.innerText = '●';
+            }
+        }
+    }
+
+    // Update score display
+    function updateScore() {
+        document.getElementById('playerScore').innerText = playerScore;
+        document.getElementById('opponentScore').innerText = opponentScore;
+    }
+
+    // Handle cell click event
+    function handleClick(event) {
+        const row = parseInt(event.target.dataset.row);
+        const col = parseInt(event.target.dataset.col);
+
+        if (board[row][col] === '' && isValidMove(row, col, currentPlayer)) {
+            board[row][col] = currentPlayer;
+            flipOpponentPieces(row, col, currentPlayer);
+            currentPlayer = (currentPlayer === 'black') ? 'white' : 'black';
+
+            // Update scores
+            playerScore = countStones('black');
+            opponentScore = countStones('white');
+            updateScore();
+
+            // Update board display
+            updateBoardDisplay();
+        }
+    }
+
+    // Check if the move is valid
+    function isValidMove(row, col, player) {
+        // Check in all eight directions
+        for (let i = -1; i <= 1; i++) {
+            for (let j = -1; j <= 1; j++) {
+                if (i === 0 && j === 0) continue;
+
+                let x = row + i;
+                let y = col + j;
+                let foundOpponent = false;
+
+                while (isValidPosition(x, y) && board[x][y] !== '') {
+                    if (board[x][y] === getOpponent(player)) {
+                        foundOpponent = true;
+                    } else if (foundOpponent && board[x][y] === player) {
+                        return true;
+                    } else {
+                        break;
+                    }
+
+                    x += i;
+                    y += j;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    // Check if a position is valid on the board
+    function isValidPosition(row, col) {
+        return row >= 0 && row < 8 && col >= 0 && col < 8;
+    }
+
+    // Get the opponent's color
+    function getOpponent(player) {
+        return (player === 'black') ? 'white' : 'black';
+    }
+
+    // Flip opponent's pieces
+    function flipOpponentPieces(row, col, player) {
+        for (let i = -1; i <= 1; i++) {
+            for (let j = -1; j <= 1; j++) {
+                if (i === 0 && j === 0) continue;
+
+                let x = row + i;
+                let y = col + j;
+                let flipList = [];
+                let foundOpponent = false;
+
+                while (isValidPosition(x, y) && board[x][y] !== '') {
+                    if (board[x][y] === getOpponent(player)) {
+                        foundOpponent = true;
+                        flipList.push([x, y]);
+                    } else if (foundOpponent && board[x][y] === player) {
+                        flipList.forEach(([flipRow, flipCol]) => {
+                            board[flipRow][flipCol] = player;
+                        });
+                        break;
+                    } else {
+                        break;
+                    }
+
+                    x += i;
+                    y += j;
+                }
+            }
+        }
+    }
+
+    // Count the number of stones for a player
+    function countStones(player) {
+        let count = 0;
+        for (let i = 0; i < 8; i++) {
+            for (let j = 0; j < 8; j++) {
+                if (board[i][j] === player) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    // Update the display of the game board
+    function updateBoardDisplay() {
+        const cells = document.querySelectorAll('.cell');
+        cells.forEach((cell, index) => {
+            const row = Math.floor(index / 8);
+            const col = index % 8;
+
+            if (board[row][col] === 'white') {
+                cell.classList.remove('black');
+                cell.classList.add('white');
+                cell.innerText = '●';
+            } else if (board[row][col] === 'black') {
+                cell.classList.remove('white');
+                cell.classList.add('black');
+                cell.innerText = '●';
+            } else {
+                cell.classList.remove('white', 'black');
+                cell.innerText = '';
+            }
+        });
+    }
+
+    // Initial board display
+    updateBoardDisplay();
+
+</script>
+</body>
+</html>
